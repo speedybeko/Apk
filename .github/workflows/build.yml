@@ -1,8 +1,7 @@
-name: Build Debug APK
+name: Build Mobile and TV APKs
 
 on:
   push:
-    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
@@ -12,24 +11,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: ZIP Dosyasini Klasorleriyle Ac
+        run: |
+          ZIP_FILE=$(ls -t *.zip 2>/dev/null | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            unzip -o "$ZIP_FILE"
+            cp -rf oyun-ceviri/* .
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle
+      - name: Setup Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
 
-      - name: Build Debug APK
-        run: |
-          # gradlew dosyasının olduğu klasörü bul ve oraya geç
-          cd $(find . -name "gradlew" -exec dirname {} \;)
-          chmod +x gradlew
-          ./gradlew assembleDebug
+      - name: Build Both Mobile (App) & TV APKs
+        run: gradle :app:assembleDebug :tv:assembleDebug
 
-      - name: Upload APK
+      - name: Upload Mobil/PC APK
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
-          path: "**/build/outputs/apk/debug/*.apk"
+          name: mobil-pc-apk
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload TV APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-apk
+          path: tv/build/outputs/apk/debug/*.apk
